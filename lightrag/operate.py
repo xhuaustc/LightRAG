@@ -1473,6 +1473,15 @@ async def extract_entities(
     use_llm_func: callable = global_config["llm_model_func"]
     entity_extract_max_gleaning = global_config["entity_extract_max_gleaning"]
 
+    # Skip entity and relationship extraction if MAX_GLEANING is 0
+    if entity_extract_max_gleaning == 0:
+        logger.info("MAX_GLEANING=0 detected, skipping entity and relationship extraction")
+        if pipeline_status is not None and pipeline_status_lock is not None:
+            async with pipeline_status_lock:
+                pipeline_status["latest_message"] = "Skipping entity extraction (MAX_GLEANING=0)"
+                pipeline_status["history_messages"].append("Skipping entity extraction (MAX_GLEANING=0)")
+        return []
+
     ordered_chunks = list(chunks.items())
     # add language and example number params to prompt
     language = global_config["addon_params"].get(
